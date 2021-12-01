@@ -1,0 +1,42 @@
+{
+    "name": "alenarmona/wp-finance-data",
+    "description": "WordPress Finance Data Widget",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Alejandro Narmona",
+            "email": "alejandro.narmona@gmail.com",
+            "homepage": "https://aride.com.ar",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/alenarmona/wp-finance-data/issues",      
+        "source": "https://github.com/alenarmona/wp-finance-data"
+    },
+    "require": {
+        "php": ">=7.2"        
+    },
+    "require-dev": {
+        "roots/wordpress": "^5.0",
+        "brain/monkey": "^2",
+        "inpsyde/php-coding-standards": "^1@dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "WpFinance\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WpFinance\\Tests\\Unit\\": "tests/PHPUnit/Unit/"
+        }
+    },
+    "extra": {
+        "installer-paths": {
+            "vendor/{$vendor}/{$name}": ["type:wordpress-plugin"]
+        },
+        "wordpress-install-dir": "vendor/wordpress/wordpress"
+    }
+}
