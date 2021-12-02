@@ -26,12 +26,14 @@ class Plugin
     /**
      * API Endpoint
      */
-    public const API_ENDPOINT = 'http://api.exchangeratesapi.io/v1/';
+    public const API_ENDPOINT = 'https://freecurrencyapi.net/api/v2/';
 
     /**
      * API Key
      */
-    public const API_KEY = '5569796b4ba36e1ea35dd85403c32b8d';
+    //public const API_KEY = '123ee660-536c-11ec-9bc9-9fd27e959b97';
+    public const API_KEY = '2c07f5c0-5389-11ec-88f3-f3b86f0fbfb0';
+    
     /**
      * Init all actions and filters
      */
@@ -62,7 +64,7 @@ class Plugin
     // Register and load the widget
     public function registerFinanceWidget()
     {
-        register_widget(WidgetFiananceData::class);
+        register_widget(WidgetFinanceData::class);
     }
 
     /**
@@ -89,13 +91,15 @@ class Plugin
     public function enqueueFrontendScripts()
     {
         //Stylesheets
+        /*
         wp_enqueue_script(
             'bootstrap-css',
-            plugins_url('/assets/js/vendor/bootstrap.min.css', __DIR__),
+            plugins_url('/assets/css/vendor/bootstrap.min.css', __DIR__),
             [],
             '5.0.2',
-            true
+            'all'
         );
+        */
 
         wp_enqueue_style(
             'wp-finance-general-css',
@@ -106,6 +110,7 @@ class Plugin
         );
 
         //Javascript
+        /*
         wp_enqueue_script(
             'bootstrap-js',
             plugins_url('/assets/js/vendor/bootstrap.min.js', __DIR__),
@@ -113,6 +118,7 @@ class Plugin
             '5.0.2',
             true
         );
+        */
 
         wp_enqueue_script(
             'chart-js',
@@ -127,17 +133,15 @@ class Plugin
             plugins_url('/assets/js/general.js', __DIR__),
             [
                 'jquery',
-                'bootstrap-js',
             ],
             Plugin::VERSION,
             true
         );
-        /*
-        wp_localize_script('wp-exercise-general-js', 'exerciseAjaxInfo', [
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'action' => UserController::AJAX_ACTION,
-            'nonce' => wp_create_nonce(UserController::AJAX_ACTION),
+
+        wp_localize_script('wp-finance-general-js', 'ajaxInfo', [
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'action' => WidgetFinanceData::AJAX_ACTION,
+                'nonce' => wp_create_nonce(WidgetFinanceData::AJAX_ACTION),
             ]);
-        */
     }
 }
