@@ -5,12 +5,6 @@ Wordpress Plugin for display Finance Data as Wordpress Widget
 * Email: *alejandro.narmona@gmail.com*
 * Git: https://github.com/alenarmona/wp-finance-data.git
 
-### WP Admin Access
-
-* url: [ADMIN](https://finance.aride.com.ar/)
-* user: financeadmin
-* pass: @1nps7432021
-
 ## Description
 
 ## Customization
