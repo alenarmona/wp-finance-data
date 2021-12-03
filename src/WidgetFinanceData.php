@@ -131,13 +131,13 @@ class WidgetFinanceData extends WP_Widget
         //echo $this->createHistoricalChart($historicalRates, $symbols);
         echo '<div class="card-body">';
         echo '  <div class="chart-container">';
-        echo '      <canvas id="chart-rates" height="250"></canvas>';
-        echo '      <div class="chart-filter d-flex justify-content-between text-primary p-1"><span>Interval:</span> <ul class="d-flex justify-content-between">';
-        echo '          <li><a href="#" data-interval="1m">1m</a></li>';
-        echo '          <li><a href="#" data-interval="1w">1w</a></li>';
-        echo '          <li><a href="#" data-interval="1d">1d</a></li>';
-        echo '      </ul></div>';
+        echo '      <canvas id="chart-rates" height="250"></canvas>';        
         echo '  </div>';
+        echo '  <div class="chart-filter d-flex justify-content-between text-primary p-1"><span>Interval:</span> <ul class="d-flex justify-content-between">';
+        echo '      <li><a href="#" data-interval="1m">1m</a></li>';
+        echo '      <li><a href="#" data-interval="1w" class="active">1w</a></li>';
+        echo '      <li><a href="#" data-interval="1d">1d</a></li>';
+        echo '  </ul></div>';
 
         //Table rates
         $lastRates = $this->retrieveExchangeRates($symbols);
@@ -156,12 +156,17 @@ class WidgetFinanceData extends WP_Widget
     public function createExchangeRatesTable($rates, $symbols): string
     {
         $ratesRows = '';
+        $index = 0;
         $currencies = explode(",", $symbols);
 
         $arrRates = (array)$rates->data;
+
         foreach ($currencies as $currency) {
-            $ratesRows .= $this->createRateRow($rates->query->base_currency, $currency, $arrRates[$currency]);
+            $active = ($index === 0) ? true : false;
+            $ratesRows .= $this->createRateRow($rates->query->base_currency, $currency, $arrRates[$currency], $active);
+            $index++;
         }
+
         $html = sprintf('
             <table class="latest-exchange-rates table table-striped">            
             <tbody>
@@ -177,8 +182,7 @@ class WidgetFinanceData extends WP_Widget
      */
     public function getLatestRatesEndpoint($symbols): string
     {
-        //$symbolsStr = implode(",", $this->currencies());
-        //By default base currency is EUR, and cannot be changed because is restricted by FREE API.
+        //By default base currency is USD, and cannot be changed because is restricted by FREE API.
         $baseEndpoint = Plugin::API_ENDPOINT . 'latest?appkey=' . Plugin::API_KEY;
 
         return $baseEndpoint . '&symbols=' . $symbols;
@@ -189,8 +193,7 @@ class WidgetFinanceData extends WP_Widget
      */
     public function getHistoricalRatesEndpoint($startDate, $endDate): string
     {
-        //$symbolsStr = implode(",", $this->currencies());
-        //By default base currency is EUR, and cannot be changed because is restricted by FREE API.
+        //By default base currency is USD, and cannot be changed because is restricted by FREE API.
         $baseEndpoint = Plugin::API_ENDPOINT . 'historical?appkey=' . Plugin::API_KEY;
 
         return $baseEndpoint . '&date_from=' . $startDate . '&date_to=' . $endDate;
@@ -225,11 +228,14 @@ class WidgetFinanceData extends WP_Widget
     /*
      * Get Historical Exchange Rates
      */
-    public function retrieveHistoricalRates($startDate, $endDate)
+    public function retrieveHistoricalRates($interval)
     {
-        $exchangeRates = get_transient(self::CACHE_HISTORICAL_EXCHANGE_RATES);
+        $exchangeRates = get_transient(self::CACHE_HISTORICAL_EXCHANGE_RATES . '_' . $interval);
 
         if ($exchangeRates === false) {
+            $endDate = date("Y-m-d");
+            $startDate = $this->getStartDate($interval);
+
             $apiResponse = wp_remote_get($this->getHistoricalRatesEndpoint($startDate, $endDate), ['timeout' => 30]);
 
             if (
@@ -242,7 +248,7 @@ class WidgetFinanceData extends WP_Widget
             $result = wp_remote_retrieve_body($apiResponse);
 
             $exchangeRates = json_decode($result);
-            set_transient(self::CACHE_HISTORICAL_EXCHANGE_RATES, $exchangeRates, 60 * 60);
+            set_transient(self::CACHE_HISTORICAL_EXCHANGE_RATES . '_' . $interval, $exchangeRates, 60 * 60);
         }
 
         return $exchangeRates;
@@ -255,43 +261,45 @@ class WidgetFinanceData extends WP_Widget
     {
         check_admin_referer(self::AJAX_ACTION, 'nonce');
 
-        $selectedInterval = (int) filter_input(INPUT_POST, 'selectedInterval', FILTER_SANITIZE_NUMBER_INT);
+        $selectedInterval = (string) filter_input(INPUT_POST, 'selectedInterval');
 
-        $historicalRates = $this->retrieveHistoricalRates('2021-11-23', '2021-11-30');
+        $historicalRates = $this->retrieveHistoricalRates($selectedInterval);
 
         try {
             //Prepare data for charts
             $data = [];
             $labels = [];
             $datasets = [];
-            $historicalData = (array)$historicalRates->data;
-            $labels = array_keys($historicalData);
-            $index = 0;
-            $colors = [
-                '#F98866',
-                '#FF420E',
-                '#FF420E',
-                '#80BD9E',
-                '#89DA59',
-                '#599EDA',
-            ];
 
-            //Create the chart datasets for each selected currency in the widget
-            foreach ($this->symbolsArray() as $currency) {
-                foreach ($historicalData as $date => $rates) {
-                    $allRates = (array)$rates;
-                    $data[$currency][] = $allRates[$currency];
-                }
-
-                $datasets[] = [
-                    'label' => $currency,
-                    'data' => $data[$currency],
-                    'borderColor' => $colors[$index],
-                    'hidden' => ($index === 0) ? false : true,
+            if (!is_null($historicalRates)) {
+                $historicalData = (array)$historicalRates->data;
+                $labels = array_keys($historicalData);
+                $index = 0;
+                $colors = [
+                    '#F98866',
+                    '#FF420E',
+                    '#FF420E',
+                    '#80BD9E',
+                    '#89DA59',
+                    '#599EDA',
                 ];
-                $index++;
+    
+                //Create the chart datasets for each selected currency in the widget
+                foreach ($this->symbolsArray() as $currency) {
+                    foreach ($historicalData as $date => $rates) {
+                        $allRates = (array)$rates;
+                        $data[$currency][] = $allRates[$currency];
+                    }
+    
+                    $datasets[] = [
+                        'label' => $currency,
+                        'data' => $data[$currency],
+                        'borderColor' => $colors[$index],
+                        'hidden' => ($index === 0) ? false : true,
+                    ];
+                    $index++;
+                }
             }
-
 
             wp_send_json_success([
                                 'nonce' => wp_create_nonce(self::AJAX_ACTION),
@@ -303,6 +311,27 @@ class WidgetFinanceData extends WP_Widget
         }
     }
 
+    /**
+     * Get start date and end date for selected interval
+     */
+    private function getStartDate(string $interval): string
+    {
+        switch ($interval) {
+            case "1d":
+                $oneDayAgo = new \DateTime('1 day ago');
+                return $oneDayAgo->format('Y-m-d');
+            case "1w":
+                $oneWeekAgo = new \DateTime('1 week ago');
+                return $oneWeekAgo->format('Y-m-d');
+            case "1m":
+                $oneMonthAgo = new \DateTime('1 month ago');
+                return $oneMonthAgo->format('Y-m-d');
+            default:
+                $oneWeekAgo = new \DateTime('1 week ago');
+                return $oneWeekAgo->format('Y-m-d');
+        }
+    }
+
      /**
      * Create User Details table row based on user info from API
      *
@@ -310,13 +339,15 @@ class WidgetFinanceData extends WP_Widget
      *
      * @return string HTML TR with User details
      */
-    private function createRateRow($baseCurrency, $crossCurrency, $rateVal): string
+    private function createRateRow($baseCurrency, $crossCurrency, $rateVal, $active = false): string
     {
         $htmlRow = sprintf(
-            '<tr class="row-rate">
-                <td class="text-primary currency" data-base-currency="%s" data-cross-currency="%s">%s/%s</td>
+            '<tr class="row-rate %s">
+                <td class="text-primary currency" data-base-currency="%s" 
+                    data-cross-currency="%s">%s/%s</td>
                 <td class="rate" data-base-currency="%s" data-cross-currency="%s">%s</td>
             </tr>',
+            ($active) ? 'active' : '',
             $baseCurrency,
             $crossCurrency,
             $baseCurrency,

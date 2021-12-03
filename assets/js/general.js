@@ -1,13 +1,10 @@
 jQuery(document).ready(function($){
-    var chartRatesLabels = [];
-    var chartRatesData = [];
-
     const ctx = document.getElementById('chart-rates').getContext('2d');
     const chartRates = new Chart(ctx, {
         type: 'line',
         options: {
-            responsive: false,
-            maintainAspectRatio: true,
+            responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     display: false,
@@ -20,9 +17,13 @@ jQuery(document).ready(function($){
         }        
     });
 
+    //Select currency
     $('.row-rate td').on('click', function(e){
         e.preventDefault();
         let crossCurrency = $(e.target).data('cross-currency');
+
+        $('.row-rate').removeClass('active');
+        $(e.target).closest('tr').addClass('active');
         console.log(crossCurrency);
         chartRates.data.datasets.forEach(dataset => {
             dataset.hidden = true;
@@ -33,7 +34,20 @@ jQuery(document).ready(function($){
         chartRates.update();
     });
 
-    loadHistoricalChartData();
+    //Select interval
+    $('.chart-filter li a').on('click', function(e){
+        e.preventDefault();
+
+        let selectedInterval = $(e.target).data('interval');
+
+        $('.chart-filter li a').removeClass('active');
+        $(e.target).addClass('active');
+
+        loadHistoricalChartData(selectedInterval);
+        
+    });
+
+    loadHistoricalChartData("1w");
 
 /**
  * ====== Functions ====== 
@@ -42,15 +56,15 @@ jQuery(document).ready(function($){
     /**
      * Load chart data based on selected interval
      */
-    function loadHistoricalChartData() {
+    function loadHistoricalChartData(selectedInterval) {
         console.log("Loading chart data...");
-        
+
         $.ajax(
             {
                 url: ajaxInfo.ajaxUrl,
                 data: {
                     action: ajaxInfo.action,
-                    selectedInterval: 'last_week',
+                    selectedInterval: selectedInterval,
                     nonce: ajaxInfo.nonce
                 },
                 type: 'POST',

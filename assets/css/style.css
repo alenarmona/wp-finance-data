@@ -1,6 +1,7 @@
 .chart-container {    
     position: relative;
-    width: 100%;        
+    margin: auto;
+    height: 250px;    
 }
 
 table.latest-exchange-rates {
@@ -16,8 +17,16 @@ table.latest-exchange-rates .rate {
     
 }
 
+tr.row-rate.active {
+    background-color: #cfcfcf !important;
+}
+
 tr.row-rate:hover {
     cursor: pointer;
+}
+
+tr.row-rate.active td.rate {
+    font-weight: bold;
 }
 
 .card-header {
@@ -35,4 +44,8 @@ tr.row-rate:hover {
 
 .chart-filter ul {
     min-width: 60%;
+}
+
+.chart-filter ul li a.active {
+    color: #0d6efd;
 }
