@@ -34,7 +34,7 @@ class WidgetFinanceData extends WP_Widget
 
     public function symbols(): string
     {
-        return get_option('widget_wp_finance_data')[3]['symbols'];        
+        return get_option('widget_wp_finance_data')[3]['symbols'];
     }
 
     public function symbolsArray(): array

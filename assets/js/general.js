@@ -24,7 +24,7 @@ jQuery(document).ready(function($){
 
         $('.row-rate').removeClass('active');
         $(e.target).closest('tr').addClass('active');
-        console.log(crossCurrency);
+        
         chartRates.data.datasets.forEach(dataset => {
             dataset.hidden = true;
             if(dataset.label === crossCurrency) {
@@ -70,20 +70,16 @@ jQuery(document).ready(function($){
                 type: 'POST',
                 dataType: 'json',
                 beforeSend: function(){
-                    console.log("Before send");
                     //$loading.fadeToggle();
                 },
-                success: function (response) {
-                    console.log("Success");
-                    console.log(response);
+                success: function (response) {                    
                     chartRates.data.labels = response.data.labels;
                     chartRates.data.datasets = response.data.datasets;                
                     chartRates.update();
                     
                 },
                 error: function(jqXHR, textStatus, error) {
-                    console.log("Error");   
-                    console.log(error);
+                    console.log("Error", error);                       
                     err = error.message || error;                                 
                 }
             }
