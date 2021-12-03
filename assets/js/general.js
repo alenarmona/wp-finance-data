@@ -7,61 +7,72 @@ jQuery(document).ready(function($){
         type: 'line',
         options: {
             responsive: false,
-            maintainAspectRatio: true
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false,
+                }
+            },
         },
         data: {
-            labels: chartRatesLabels,
-            datasets: [{
-                label: 'USD/EUR',
-                data: [],
-                borderColor: 'rgb(75, 192, 192)'                
-                }]
+            labels: [],
+            datasets: []
         }        
     });
 
-    $('tr.row-rate').on('click', function(e){
+    $('.row-rate td').on('click', function(e){
         e.preventDefault();
-
-    });
-
-
-function loadHistoricalChartData() {
-    console.log("Loading chart data...");
-    $.ajax(
-        {
-            url: ajaxInfo.ajaxUrl,
-            data: {
-                action: ajaxInfo.action,
-                selectedInterval: 'last_week',
-                nonce: ajaxInfo.nonce
-            },
-            type: 'POST',
-            dataType: 'json',
-            beforeSend: function(){
-                console.log("Before send");
-                //$loading.fadeToggle();
-            },
-            success: function (response) {
-                console.log("Success");
-                console.log(response);
-                chartRates.data.labels = response.data.labels;
-                chartRates.data.datasets[0].data = response.data.data;
-                chartRates.update();
-                
-            },
-            error: function(jqXHR, textStatus, error) {
-                console.log("Error");   
-                console.log(error);
-                err = error.message || error;                 
-                
-                //$loading.fadeToggle();
+        let crossCurrency = $(e.target).data('cross-currency');
+        console.log(crossCurrency);
+        chartRates.data.datasets.forEach(dataset => {
+            dataset.hidden = true;
+            if(dataset.label === crossCurrency) {
+                dataset.hidden = false;
             }
-        }
-    );
-}
+        });
+        chartRates.update();
+    });
 
     loadHistoricalChartData();
 
+/**
+ * ====== Functions ====== 
+ */
 
-
+    /**
+     * Load chart data based on selected interval
+     */
+    function loadHistoricalChartData() {
+        console.log("Loading chart data...");
+        
+        $.ajax(
+            {
+                url: ajaxInfo.ajaxUrl,
+                data: {
+                    action: ajaxInfo.action,
+                    selectedInterval: 'last_week',
+                    nonce: ajaxInfo.nonce
+                },
+                type: 'POST',
+                dataType: 'json',
+                beforeSend: function(){
+                    console.log("Before send");
+                    //$loading.fadeToggle();
+                },
+                success: function (response) {
+                    console.log("Success");
+                    console.log(response);
+                    chartRates.data.labels = response.data.labels;
+                    chartRates.data.datasets = response.data.datasets;                
+                    chartRates.update();
+                    
+                },
+                error: function(jqXHR, textStatus, error) {
+                    console.log("Error");   
+                    console.log(error);
+                    err = error.message || error;                                 
+                }
+            }
+        );
+    }
 });

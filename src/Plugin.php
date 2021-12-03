@@ -91,15 +91,13 @@ class Plugin
     public function enqueueFrontendScripts()
     {
         //Stylesheets
-        /*
-        wp_enqueue_script(
+        wp_enqueue_style(
             'bootstrap-css',
             plugins_url('/assets/css/vendor/bootstrap.min.css', __DIR__),
             [],
             '5.0.2',
             'all'
         );
-        */
 
         wp_enqueue_style(
             'wp-finance-general-css',

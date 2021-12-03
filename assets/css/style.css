@@ -1,5 +1,38 @@
 .chart-container {    
     position: relative;
-    width: 100%;
-    height: 400px;
+    width: 100%;        
+}
+
+table.latest-exchange-rates {
+    font-size: 12px; 
+}
+
+table.latest-exchange-rates td {
+    border: none;
+    padding: 0.3rem;
+}
+table.latest-exchange-rates .rate {
+    text-align: right;
+    
+}
+
+tr.row-rate:hover {
+    cursor: pointer;
+}
+
+.card-header {
+    margin-bottom: 0 !important;
+}
+
+.card-body {
+    margin: 0;
+    padding: 0px 7px;
+}
+
+.chart-filter ul, .chart-filter span {
+    font-size: 12px;
+}
+
+.chart-filter ul {
+    min-width: 60%;
 }

@@ -30,6 +30,18 @@ class WidgetFinanceData extends WP_Widget
         add_action('wp_ajax_nopriv_' . self::AJAX_ACTION, [$this, 'updateRatesChart']);
     }
 
+    private $symbols;
+
+    public function symbols(): string
+    {
+        return get_option('widget_wp_finance_data')[3]['symbols'];        
+    }
+
+    public function symbolsArray(): array
+    {
+        return explode(",", $this->symbols());
+    }
+
     /**
      * Creating widget Backend
      */
@@ -81,6 +93,8 @@ class WidgetFinanceData extends WP_Widget
         $instance['base_currency'] = isset($new_instance['base_currency'] ) ? wp_strip_all_tags($new_instance['base_currency']) : '';
         $instance['symbols'] = isset($new_instance['symbols']) ? wp_strip_all_tags($new_instance['symbols']) : '';
 
+        $this->symbols = $instance['symbols'];
+
         return $instance;
     }
 
@@ -97,33 +111,45 @@ class WidgetFinanceData extends WP_Widget
         $base_currency = isset($instance['base_currency']) ? wp_strip_all_tags($instance['base_currency']) : '';
         $symbols = isset($instance['symbols']) ? wp_strip_all_tags($instance['symbols']) : '';
 
+        //Assign symbols globally
+        $this->symbols = $symbols;
+
         // WordPress core before_widget hook (always include )
         echo $before_widget;
 
        // Display the widget
-       echo '<div class="widget finance-data-widget">';
+       echo '<div class="widget card finance-data-widget">';
 
         // Display widget title if defined
         if ($title) {
+            echo '<div class="card-header">';
             echo $before_title . $title . $after_title;
+            echo '</div>';
         }
         //Chart rates
         //$historicalRates = $this->retrieveHistoricalRates('2021-11-23', '2021-11-30');
         //echo $this->createHistoricalChart($historicalRates, $symbols);
-        echo '<div class="chart-container">';
-        echo '  <canvas id="chart-rates" height="350"></canvas>';
-        echo '</div>';
+        echo '<div class="card-body">';
+        echo '  <div class="chart-container">';
+        echo '      <canvas id="chart-rates" height="250"></canvas>';
+        echo '      <div class="chart-filter d-flex justify-content-between text-primary p-1"><span>Interval:</span> <ul class="d-flex justify-content-between">';
+        echo '          <li><a href="#" data-interval="1m">1m</a></li>';
+        echo '          <li><a href="#" data-interval="1w">1w</a></li>';
+        echo '          <li><a href="#" data-interval="1d">1d</a></li>';
+        echo '      </ul></div>';
+        echo '  </div>';
 
         //Table rates
         $lastRates = $this->retrieveExchangeRates($symbols);
         echo $this->createExchangeRatesTable($lastRates, $symbols);
 
+        echo '  </div>';
         echo '</div>';
 
         // WordPress core after_widget hook (always include )
         echo $after_widget;
     }
-    
+
     /**
      * Creates HTML table with latest rates
      */
@@ -137,13 +163,7 @@ class WidgetFinanceData extends WP_Widget
             $ratesRows .= $this->createRateRow($rates->query->base_currency, $currency, $arrRates[$currency]);
         }
         $html = sprintf('
-            <table class="table">
-            <thead>
-            <tr>
-                <th scope="col">Currencies</th>                
-                <th scope="col">Rate</th>
-            </tr>
-            </thead>
+            <table class="latest-exchange-rates table table-striped">            
             <tbody>
             %s
             </tbody>
@@ -224,16 +244,15 @@ class WidgetFinanceData extends WP_Widget
             $exchangeRates = json_decode($result);
             set_transient(self::CACHE_HISTORICAL_EXCHANGE_RATES, $exchangeRates, 60 * 60);
         }
-        
+
         return $exchangeRates;
     }
-    
+
     /*
      * Update chart based on time interval
      */
     public function updateRatesChart()
     {
-        
         check_admin_referer(self::AJAX_ACTION, 'nonce');
 
         $selectedInterval = (int) filter_input(INPUT_POST, 'selectedInterval', FILTER_SANITIZE_NUMBER_INT);
@@ -241,20 +260,43 @@ class WidgetFinanceData extends WP_Widget
         $historicalRates = $this->retrieveHistoricalRates('2021-11-23', '2021-11-30');
 
         try {
-            //Prepare data
-            $labels = [];
+            //Prepare data for charts
             $data = [];
+            $labels = [];
+            $datasets = [];
             $historicalData = (array)$historicalRates->data;
             $labels = array_keys($historicalData);
-            
-            foreach($historicalData as $currency=>$rate) {
-                $data[] = $rate->EUR;
+            $index = 0;
+            $colors = [
+                '#F98866',
+                '#FF420E',
+                '#FF420E',
+                '#80BD9E',
+                '#89DA59',
+                '#599EDA',
+            ];
+
+            //Create the chart datasets for each selected currency in the widget
+            foreach ($this->symbolsArray() as $currency) {
+                foreach ($historicalData as $date => $rates) {
+                    $allRates = (array)$rates;
+                    $data[$currency][] = $allRates[$currency];
+                }
+
+                $datasets[] = [
+                    'label' => $currency,
+                    'data' => $data[$currency],
+                    'borderColor' => $colors[$index],
+                    'hidden' => ($index === 0) ? false : true,
+                ];
+                $index++;
             }
+
 
             wp_send_json_success([
                                 'nonce' => wp_create_nonce(self::AJAX_ACTION),
                                 'labels' => $labels,
-                                'data' => $data,
+                                'datasets' => $datasets,
                             ]);
         } catch (Exception $exception) {
             wp_send_json_error(['message' => $exception->getMessage()]);
@@ -271,10 +313,12 @@ class WidgetFinanceData extends WP_Widget
     private function createRateRow($baseCurrency, $crossCurrency, $rateVal): string
     {
         $htmlRow = sprintf(
-            '<tr class="row-rate" data-base-currency="%s" data-cross-currency="%s">
-                <td>%s/%s</td>
-                <td>%s</td>
+            '<tr class="row-rate">
+                <td class="text-primary currency" data-base-currency="%s" data-cross-currency="%s">%s/%s</td>
+                <td class="rate" data-base-currency="%s" data-cross-currency="%s">%s</td>
             </tr>',
+            $baseCurrency,
+            $crossCurrency,
             $baseCurrency,
             $crossCurrency,
             $baseCurrency,
