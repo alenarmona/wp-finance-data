@@ -119,6 +119,9 @@ class WidgetFinanceData extends WP_Widget
 
        // Display the widget
        echo '<div class="widget card finance-data-widget">';
+       echo '<div class="loading"><div class="loading-container">';
+       echo '   <img src="' . plugin_dir_url(__FILE__) . '../assets/img/preloader.svg" alt="Preloader"/>';
+       echo '</div></div>';
 
         // Display widget title if defined
         if ($title) {

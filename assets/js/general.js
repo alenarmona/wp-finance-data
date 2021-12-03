@@ -9,7 +9,7 @@ jQuery(document).ready(function($){
                 legend: {
                     display: false,
                 }
-            },
+            },           
         },
         data: {
             labels: [],
@@ -19,7 +19,7 @@ jQuery(document).ready(function($){
 
     //Select currency
     $('.row-rate td').on('click', function(e){
-        e.preventDefault();
+        e.preventDefault();        
         let crossCurrency = $(e.target).data('cross-currency');
 
         $('.row-rate').removeClass('active');
@@ -58,6 +58,7 @@ jQuery(document).ready(function($){
      */
     function loadHistoricalChartData(selectedInterval) {
         console.log("Loading chart data...");
+        let $loading = $('.loading');  
 
         $.ajax(
             {
@@ -70,17 +71,19 @@ jQuery(document).ready(function($){
                 type: 'POST',
                 dataType: 'json',
                 beforeSend: function(){
-                    //$loading.fadeToggle();
+                    $loading.fadeToggle();
                 },
                 success: function (response) {                    
                     chartRates.data.labels = response.data.labels;
                     chartRates.data.datasets = response.data.datasets;                
                     chartRates.update();
+                    $loading.fadeToggle();
                     
                 },
                 error: function(jqXHR, textStatus, error) {
                     console.log("Error", error);                       
-                    err = error.message || error;                                 
+                    err = error.message || error;     
+                    $loading.fadeToggle();                            
                 }
             }
         );
